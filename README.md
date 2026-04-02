@@ -20,7 +20,18 @@
 - **VRAM**: 전체 모델 가동 시 최소 100GB+ VRAM 필요 (GB10 124GB 최적)
 - **Model Files**: 각 모델의 GGUF 및 mmproj 파일을 `models/` 폴더에 배치하십시오. (상세 정보는 [MODEL_CREDITS.md](./MODEL_CREDITS.md) 참조)
 
-### 2. 실행
+### 2. 실행 (사전 빌드된 이미지 사용)
+로컬에서 직접 빌드하지 않고, GitHub에 이미 업로드된 최신 이미지를 사용할 수 있습니다.
+
+```bash
+# 이미지 내려받기
+docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:latest
+
+# 실행 (docker-compose 사용 시)
+docker-compose up -d
+```
+
+### 3. 소스 코드에서 실행 (직접 빌드)
 ```bash
 # 컨테이너 빌드 및 백그라운드 실행
 docker-compose up -d --build
