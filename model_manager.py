@@ -128,6 +128,10 @@ class VLMModelManager:
         if reasoning is None:
             reasoning = self.hw_config.get('reasoning', 'off')
 
+        # reasoning이 bool일 경우 문자열 "on"/"off"로 변환
+        if isinstance(reasoning, bool):
+            reasoning = "on" if reasoning else "off"
+
         cfg = self.models[model_name]
         port = cfg['port']
         model_path = self._resolve_path(cfg['model_path'])
