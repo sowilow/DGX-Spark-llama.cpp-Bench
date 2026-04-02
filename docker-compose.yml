@@ -1,0 +1,31 @@
+# bench_UI_simple/docker-compose.yml
+version: '3.8'
+
+services:
+  vlm-benchmark:
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ports:
+      - "7860:7860"      # Web UI
+      - "8081:8081"      # Qwen 2B
+      - "8082:8082"      # Qwen 35B
+      - "8083:8083"      # InternVL 3.5 2B
+      - "8084:8084"      # LFM 2.5 1.6B
+      - "8085:8085"      # Next2 Air
+    volumes:
+      - .:/app
+      - ./models:/app/models
+    environment:
+      - LLAMA_SERVER_PATH=/usr/local/bin/llama-server
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

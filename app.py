@@ -1,0 +1,127 @@
+# bench_UI_simple/app.py
+import gradio as gr
+import os
+import time
+import pandas as pd
+from model_manager import VLMModelManager
+
+# Initialize the manager
+manager = VLMModelManager()
+
+def chat_interface(model_name, message, history, system_prompt, max_tokens, temperature):
+    user_text = message.get("text", "")
+    user_files = message.get("files", [])
+    
+    # Process user input
+    user_content = []
+    if user_text: user_content.append({"type": "text", "text": user_text})
+    for f in user_files: user_content.append({"type": "file", "file": {"path": f}})
+    history.append({"role": "user", "content": user_content})
+    yield history, "Waiting...", "Waiting..."
+
+    # Query model
+    image_path = user_files[0] if user_files else None
+    resp = manager.query(model_name, user_text, image_path, system_prompt, max_tokens, temperature)
+    
+    if resp["status"] == "success":
+        history.append({"role": "assistant", "content": resp["text"]})
+        yield history, f"{resp['input_tps']:.2f} tokens/s", f"{resp['output_tps']:.2f} tokens/s"
+    else:
+        history.append({"role": "assistant", "content": f"Error: {resp['message']}"})
+        yield history, "Error", "Error"
+
+def run_benchmark(model_names, test_text, system_prompt, max_tokens, temperature):
+    if not test_text: return pd.DataFrame(), "테스트 텍스트를 입력하세요."
+    
+    results = []
+    total_models = len(model_names)
+    
+    for i, model_name in enumerate(model_names):
+        yield pd.DataFrame(results), f"진행 중: {model_name} ({i+1}/{total_models})"
+        
+        input_tps_list = []
+        output_tps_list = []
+        durations = []
+        
+        # 20 Iterations
+        for iter_idx in range(20):
+            resp = manager.query(model_name, test_text, None, system_prompt, max_tokens, temperature)
+            
+            # Skip the first iteration (warmup)
+            if iter_idx > 0 and resp["status"] == "success":
+                input_tps_list.append(resp["input_tps"])
+                output_tps_list.append(resp["output_tps"])
+                durations.append(resp["duration"])
+            
+            time.sleep(0.1) # Cool down
+            
+        if input_tps_list:
+            avg_input = sum(input_tps_list) / len(input_tps_list)
+            avg_output = sum(output_tps_list) / len(output_tps_list)
+            avg_duration = sum(durations) / len(durations)
+            
+            results.append({
+                "Model": model_name,
+                "Avg Input TPS (19-runs)": round(avg_input, 2),
+                "Avg Output TPS (19-runs)": round(avg_output, 2),
+                "Avg Latency (s)": round(avg_duration, 3)
+            })
+            
+    yield pd.DataFrame(results), "벤치마크 완료"
+
+# UI Header
+css = """
+footer {visibility: hidden}
+.status-box { background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+"""
+
+with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
+    gr.Markdown("# 🚀 VLM Research Bench UI (Blackwell Optimized)")
+    gr.Markdown("GPU: NVIDIA Blackwell GB10 | Arch: ARM64 | Environment: CUDA 13.0")
+    
+    with gr.Tabs():
+        # -- Tab 1: Playground --
+        with gr.Tab("Playground (Qualitative)"):
+            with gr.Row():
+                with gr.Column(scale=1):
+                    model_list = list(manager.models.keys())
+                    model_dropdown = gr.Dropdown(choices=model_list, value=model_list[0], label="모델 선택")
+                    system_input = gr.Textbox(value="You are a helpful assistant.", label="System Prompt", lines=3)
+                    with gr.Row():
+                        max_tokens = gr.Slider(64, 4096, value=512, step=64, label="Max Tokens")
+                        temp = gr.Slider(0.0, 1.5, value=0.7, step=0.1, label="Temperature")
+                
+                with gr.Column(scale=2):
+                    chatbot = gr.Chatbot(label="VLM Chat", height=500)
+                    with gr.Row():
+                        in_tps = gr.Textbox(label="Input Speed (TPS)", interactive=False)
+                        out_tps = gr.Textbox(label="Output Speed (TPS)", interactive=False)
+                    chat_input = gr.MultimodalTextbox(interactive=True, placeholder="Text or Image...", show_label=False)
+            
+            chat_input.submit(
+                chat_interface,
+                inputs=[model_dropdown, chat_input, chatbot, system_input, max_tokens, temp],
+                outputs=[chatbot, in_tps, out_tps]
+            )
+
+        # -- Tab 2: Benchmark --
+        with gr.Tab("Benchmark (Quantitative)"):
+            gr.Markdown("### 📊 정량적 성능 측정 (20회 반복, 첫 회 결과 제외)")
+            with gr.Row():
+                with gr.Column(scale=1):
+                    bench_models = gr.CheckboxGroup(choices=model_list, value=model_list, label="측정 대상 모델")
+                    bench_text = gr.Textbox(value="Describe the image in detail.", label="Test Prompt")
+                    bench_btn = gr.Button("🚀 벤치마크 시작", variant="primary")
+                    bench_status = gr.Markdown("상태: 대시 중")
+                
+                with gr.Column(scale=2):
+                    bench_table = gr.Dataframe(label="결과 테이블", interactive=False)
+            
+            bench_btn.click(
+                run_benchmark,
+                inputs=[bench_models, bench_text, system_input, max_tokens, temp],
+                outputs=[bench_table, bench_status]
+            )
+
+if __name__ == "__main__":
+    demo.queue().launch(server_name="0.0.0.0", server_port=7860, css=css)

@@ -1,0 +1,1 @@
+gradio\nrequests\npyyaml\npsutil\npandas

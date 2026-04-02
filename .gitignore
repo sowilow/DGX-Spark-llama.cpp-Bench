@@ -1,0 +1,14 @@
+# Models (Large Files)
+models/*.gguf
+models/*.bin
+models/*.zip
+models/*.tar.gz
+
+# Logs and Temp files
+*.log
+__pycache__/
+*.pyc
+.DS_Store
+
+# Docker
+.docker

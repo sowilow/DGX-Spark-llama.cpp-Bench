@@ -1,0 +1,31 @@
+# bench_UI_simple/config/config.yaml
+# NVIDIA Blackwell (DGX Spark) Optimized Configuration
+
+hardware:
+  gpu_layers: 999
+  ctx_size: 16384
+  flash_attn: "on"
+  reasoning: "off"
+
+# Simultaneous multi-model serving configuration
+models:
+  Qwen3.5_2B:
+    port: 8081
+    model_path: "models/qwen3.5-2b-q4_k_m.gguf"
+    mmproj_path: "models/qwen3.5-2b-mmproj-f16.gguf"
+  Qwen3.5_35B:
+    port: 8082
+    model_path: "models/qwen3.5-35b-a3b-q4_k_m.gguf"
+    mmproj_path: "models/qwen3.5-2b-mmproj-f16.gguf" # Shares same vision projector
+  InternVL3.5_2B:
+    port: 8083
+    model_path: "models/internvl3_5-2b-flash-q4_k_m.gguf"
+    mmproj_path: "models/internvl3_5-2b-flash-mmproj-f16.gguf"
+  LFM2.5_1.6B:
+    port: 8084
+    model_path: "models/lfm2.5-vl-1.6b-q8_0.gguf"
+    mmproj_path: "models/lfm2.5-mmproj-f16.gguf"
+  Next2_Air:
+    port: 8085
+    model_path: "models/next2-air-q4_k_m.gguf"
+    mmproj_path: "models/next2-air-mmproj-f16.gguf"
