@@ -20,6 +20,7 @@ class VLMModelManager:
         self.models = self.config['models']
         self.hw_config = self.config['hardware']
         self.processes = {} # {model_name: process}
+        self.running_reasoning = {} # {model_name: "on" or "off"}
         self.server_bin = "/usr/local/bin/llama-server"
         
         print("--- Environment Check (DGX Spark / Arm / CUDA 13) ---")
@@ -119,11 +120,14 @@ class VLMModelManager:
                 print(f"[!] {model_name} 서버 가동에 실패했습니다.")
         print("--- 모든 모델 서버 가동 작업 완료 ---\n")
 
-    def start_server(self, model_name):
+    def start_server(self, model_name, reasoning=None):
         # If already running, return
         if model_name in self.processes and self.processes[model_name].poll() is None:
             return True
             
+        if reasoning is None:
+            reasoning = self.hw_config.get('reasoning', 'off')
+
         cfg = self.models[model_name]
         port = cfg['port']
         model_path = self._resolve_path(cfg['model_path'])
@@ -139,15 +143,16 @@ class VLMModelManager:
             "-ngl", str(self.hw_config['gpu_layers']),
             "--ctx-size", str(self.hw_config['ctx_size']),
             "--flash-attn", self.hw_config['flash_attn'],
-            "--reasoning", self.hw_config['reasoning']
+            "--reasoning", reasoning
         ]
         
-        print(f"--- [DEBUG] Starting server for {model_name} on port {port} ---")
+        print(f"--- [DEBUG] Starting server for {model_name} on port {port} (Reasoning: {reasoning}) ---")
         log_path = os.path.join(self.base_dir, f"server_{model_name}.log")
         log_file = open(log_path, "w", buffering=1)
         
         proc = subprocess.Popen(cmd, stdout=log_file, stderr=log_file, preexec_fn=os.setsid)
         self.processes[model_name] = proc
+        self.running_reasoning[model_name] = reasoning
         
         # Wait for ready
         max_retries = 60
@@ -181,14 +186,33 @@ class VLMModelManager:
         status = {}
         for name in self.models.keys():
             if name in self.processes and self.processes[name].poll() is None:
-                status[name] = "Running"
+                status[name] = {
+                    "state": "Running",
+                    "reasoning": self.running_reasoning.get(name, "off")
+                }
             else:
-                status[name] = "Stopped"
+                status[name] = {
+                    "state": "Stopped",
+                    "reasoning": "-"
+                }
         return status
 
-    def query(self, model_name, prompt, image_path=None, system_prompt="You are a helpful assistant.", max_tokens=512, temperature=0.7):
+    def query(self, model_name, prompt, image_path=None, system_prompt="You are a helpful assistant.", max_tokens=512, temperature=0.7, reasoning=None):
+        if reasoning is None:
+            reasoning = self.hw_config.get('reasoning', 'off')
+        
+        # reasoning이 bool일 경우 문자열 "on"/"off"로 변환
+        if isinstance(reasoning, bool):
+            reasoning = "on" if reasoning else "off"
+            
+        # 현재 실행 중인 서버의 reasoning 모드와 다를 경우 재시작
+        current_reasoning = self.running_reasoning.get(model_name)
+        if current_reasoning and current_reasoning != reasoning:
+            print(f"--- [DEBUG] Reasoning mode change detected for {model_name} ({current_reasoning} -> {reasoning}). Restarting... ---")
+            self.stop_server(model_name)
+
         # Ensure server is running
-        if not self.start_server(model_name):
+        if not self.start_server(model_name, reasoning=reasoning):
             return {"status": "error", "message": f"Failed to start server for {model_name}"}
             
         port = self.models[model_name]['port']

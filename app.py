@@ -8,7 +8,7 @@ from model_manager import VLMModelManager
 # Initialize the manager
 manager = VLMModelManager()
 
-def chat_interface(model_name, message, history, system_prompt, max_tokens, temperature):
+def chat_interface(model_name, message, history, system_prompt, max_tokens, temperature, reasoning):
     user_text = message.get("text", "")
     user_files = message.get("files", [])
     
@@ -21,7 +21,7 @@ def chat_interface(model_name, message, history, system_prompt, max_tokens, temp
 
     # Query model
     image_path = user_files[0] if user_files else None
-    resp = manager.query(model_name, user_text, image_path, system_prompt, max_tokens, temperature)
+    resp = manager.query(model_name, user_text, image_path, system_prompt, max_tokens, temperature, reasoning=reasoning)
     
     if resp["status"] == "success":
         history.append({"role": "assistant", "content": resp["text"]})
@@ -30,7 +30,7 @@ def chat_interface(model_name, message, history, system_prompt, max_tokens, temp
         history.append({"role": "assistant", "content": f"Error: {resp['message']}"})
         yield history, "Error", "Error"
 
-def run_benchmark(model_names, test_text, system_prompt, max_tokens, temperature):
+def run_benchmark(model_names, test_text, system_prompt, max_tokens, temperature, reasoning):
     if not test_text: return pd.DataFrame(), "테스트 텍스트를 입력하세요."
     
     results = []
@@ -45,7 +45,7 @@ def run_benchmark(model_names, test_text, system_prompt, max_tokens, temperature
         
         # 20 Iterations
         for iter_idx in range(20):
-            resp = manager.query(model_name, test_text, None, system_prompt, max_tokens, temperature)
+            resp = manager.query(model_name, test_text, None, system_prompt, max_tokens, temperature, reasoning=reasoning)
             
             # Skip the first iteration (warmup)
             if iter_idx > 0 and resp["status"] == "success":
@@ -73,17 +73,19 @@ def get_status_table():
     status_dict = manager.get_running_status()
     rows = []
     for name, cfg in manager.models.items():
+        m_status = status_dict.get(name, {"state": "Stopped", "reasoning": "-"})
         rows.append({
             "Model Name": name,
             "Port": cfg['port'],
-            "Status": status_dict.get(name, "Stopped"),
+            "Status": m_status["state"],
+            "Reasoning": m_status["reasoning"],
             "Action": "Ready"
         })
     return pd.DataFrame(rows)
 
-def toggle_server(model_name, action):
+def toggle_server(model_name, action, reasoning=False):
     if action == "Start":
-        manager.start_server(model_name)
+        manager.start_server(model_name, reasoning=reasoning)
     else:
         manager.stop_server(model_name)
     return get_status_table()
@@ -109,6 +111,7 @@ with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
                     with gr.Row():
                         max_tokens = gr.Slider(64, 4096, value=512, step=64, label="Max Tokens")
                         temp = gr.Slider(0.0, 1.5, value=0.7, step=0.1, label="Temperature")
+                    reasoning_opt = gr.Checkbox(label="Reasoning (Chain of Thought)", value=False)
                 
                 with gr.Column(scale=2):
                     chatbot = gr.Chatbot(label="VLM Chat", height=500)
@@ -119,7 +122,7 @@ with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
             
             chat_input.submit(
                 chat_interface,
-                inputs=[model_dropdown, chat_input, chatbot, system_input, max_tokens, temp],
+                inputs=[model_dropdown, chat_input, chatbot, system_input, max_tokens, temp, reasoning_opt],
                 outputs=[chatbot, in_tps, out_tps]
             )
 
@@ -138,6 +141,7 @@ with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
             with gr.Row():
                 with gr.Column():
                     manage_target = gr.Dropdown(choices=model_list, label="제어 대상 모델")
+                    manage_reasoning = gr.Checkbox(label="Reasoning Mode (Start 시 반영)", value=False)
                     with gr.Row():
                         start_btn = gr.Button("▶ Start Server", variant="primary")
                         stop_btn = gr.Button("⏹ Stop Server", variant="secondary")
@@ -146,8 +150,8 @@ with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
                     refresh_btn = gr.Button("🔄 상태 새로고침")
 
             # Event handlers
-            start_btn.click(fn=lambda m: toggle_server(m, "Start"), inputs=[manage_target], outputs=[status_table])
-            stop_btn.click(fn=lambda m: toggle_server(m, "Stop"), inputs=[manage_target], outputs=[status_table])
+            start_btn.click(fn=lambda m, r: toggle_server(m, "Start", r), inputs=[manage_target, manage_reasoning], outputs=[status_table])
+            stop_btn.click(fn=lambda m, r: toggle_server(m, "Stop", r), inputs=[manage_target, manage_reasoning], outputs=[status_table])
             refresh_btn.click(fn=get_status_table, outputs=[status_table])
             
             # Auto refresh (Timer)
@@ -160,6 +164,7 @@ with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
             with gr.Row():
                 with gr.Column(scale=1):
                     bench_models = gr.CheckboxGroup(choices=model_list, value=model_list, label="측정 대상 모델")
+                    bench_reasoning = gr.Checkbox(label="Enable Reasoning (COT) for Benchmark", value=False)
                     bench_text = gr.Textbox(value="Describe the image in detail.", label="Test Prompt")
                     bench_btn = gr.Button("🚀 벤치마크 시작", variant="primary")
                     bench_status = gr.Markdown("상태: 대시 중")
@@ -169,7 +174,7 @@ with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
             
             bench_btn.click(
                 run_benchmark,
-                inputs=[bench_models, bench_text, system_input, max_tokens, temp],
+                inputs=[bench_models, bench_text, system_input, max_tokens, temp, bench_reasoning],
                 outputs=[bench_table, bench_status]
             )
 
