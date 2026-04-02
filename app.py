@@ -69,6 +69,25 @@ def run_benchmark(model_names, test_text, system_prompt, max_tokens, temperature
             
     yield pd.DataFrame(results), "벤치마크 완료"
 
+def get_status_table():
+    status_dict = manager.get_running_status()
+    rows = []
+    for name, cfg in manager.models.items():
+        rows.append({
+            "Model Name": name,
+            "Port": cfg['port'],
+            "Status": status_dict.get(name, "Stopped"),
+            "Action": "Ready"
+        })
+    return pd.DataFrame(rows)
+
+def toggle_server(model_name, action):
+    if action == "Start":
+        manager.start_server(model_name)
+    else:
+        manager.stop_server(model_name)
+    return get_status_table()
+
 # UI Header
 css = """
 footer {visibility: hidden}
@@ -104,7 +123,38 @@ with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
                 outputs=[chatbot, in_tps, out_tps]
             )
 
-        # -- Tab 2: Benchmark --
+        # -- Tab 2: Server Management --
+        with gr.Tab("Server Management"):
+            gr.Markdown("### 🛠 VLM 서버 개별 제어판")
+            gr.Markdown("모델별 서버를 켜거나 꺼서 VRAM 자원을 관리할 수 있습니다.")
+            
+            with gr.Row():
+                status_table = gr.Dataframe(
+                    value=get_status_table(),
+                    label="현재 서버 상태", 
+                    interactive=False
+                )
+            
+            with gr.Row():
+                with gr.Column():
+                    manage_target = gr.Dropdown(choices=model_list, label="제어 대상 모델")
+                    with gr.Row():
+                        start_btn = gr.Button("▶ Start Server", variant="primary")
+                        stop_btn = gr.Button("⏹ Stop Server", variant="secondary")
+                
+                with gr.Column():
+                    refresh_btn = gr.Button("🔄 상태 새로고침")
+
+            # Event handlers
+            start_btn.click(fn=lambda m: toggle_server(m, "Start"), inputs=[manage_target], outputs=[status_table])
+            stop_btn.click(fn=lambda m: toggle_server(m, "Stop"), inputs=[manage_target], outputs=[status_table])
+            refresh_btn.click(fn=get_status_table, outputs=[status_table])
+            
+            # Auto refresh (Timer)
+            timer = gr.Timer(5)
+            timer.tick(fn=get_status_table, outputs=[status_table])
+
+        # -- Tab 3: Benchmark --
         with gr.Tab("Benchmark (Quantitative)"):
             gr.Markdown("### 📊 정량적 성능 측정 (20회 반복, 첫 회 결과 제외)")
             with gr.Row():

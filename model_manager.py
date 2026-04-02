@@ -162,6 +162,30 @@ class VLMModelManager:
             time.sleep(1)
         return False
 
+    def stop_server(self, model_name):
+        if model_name in self.processes:
+            proc = self.processes[model_name]
+            if proc.poll() is None:
+                print(f"--- [DEBUG] Stopping server for {model_name} ---")
+                try:
+                    pgid = os.getpgid(proc.pid)
+                    os.killpg(pgid, signal.SIGTERM)
+                    proc.wait(timeout=5)
+                except Exception as e:
+                    print(f"Error stopping {model_name}: {e}")
+            del self.processes[model_name]
+            return True
+        return False
+
+    def get_running_status(self):
+        status = {}
+        for name in self.models.keys():
+            if name in self.processes and self.processes[name].poll() is None:
+                status[name] = "Running"
+            else:
+                status[name] = "Stopped"
+        return status
+
     def query(self, model_name, prompt, image_path=None, system_prompt="You are a helpful assistant.", max_tokens=512, temperature=0.7):
         # Ensure server is running
         if not self.start_server(model_name):
