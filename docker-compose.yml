@@ -3,6 +3,7 @@ version: '3.8'
 
 services:
   vlm-benchmark:
+    image: ghcr.io/sowilow/dgx-spark-llama.cpp-bench:latest
     build:
       context: .
       dockerfile: Docker/Dockerfile
