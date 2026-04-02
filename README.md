@@ -27,11 +27,21 @@
 # 이미지 내려받기
 docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:latest
 
-# 실행 (docker-compose 사용 시)
+# 실행 (기본적으로 모든 모델 서버가 자동 시작됨)
 docker-compose up -d
 ```
 
-### 3. 소스 코드에서 실행 (직접 빌드)
+### 3. 설정 변경 (Configuration)
+`config/config.yaml` 파일을 수정하여 가동 방식을 제어할 수 있습니다.
+
+| 설정 항목 | 설명 | 기본값 |
+| :--- | :--- | :--- |
+| `pre_start_all` | 시작 시 모든 모델 서버(8081-8085)를 즉시 가동할지 여부 | `true` |
+| `gpu_layers` | GPU로 오프로딩할 레이어 수 (999는 전체 오프로딩) | `999` |
+| `ctx_size` | 컨텍스트 창 크기 (토큰 수) | `16384` |
+| `AUTO_DOWNLOAD` | (환경 변수) 모델 부재 시 자동 다운로드 여부 | `Y` |
+
+### 4. 소스 코드에서 실행 (직접 빌드)
 ```bash
 # 컨테이너 빌드 및 백그라운드 실행
 docker-compose up -d --build

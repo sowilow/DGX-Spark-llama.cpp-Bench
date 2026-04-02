@@ -26,6 +26,7 @@ services:
       - ./models:/app/models
     environment:
       - LLAMA_SERVER_PATH=/usr/local/bin/llama-server
+      - AUTO_DOWNLOAD=Y
     stdin_open: true
     tty: true
     restart: unless-stopped

@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y python3 python3-pip libcurl4 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+COPY . /app
 
 # Copy compiled binary and all necessary shared libraries
 COPY --from=builder /app/llama.cpp/build/bin/llama-server /usr/local/bin/
@@ -35,7 +36,7 @@ COPY --from=builder /app/libs/* /usr/local/lib/llama.cpp/
 RUN echo "/usr/local/lib/llama.cpp" > /etc/ld.so.conf.d/llama_cpp.conf && ldconfig
 
 # Install Python dependencies (Gradio, Requests, etc.)
-RUN pip install --no-cache-dir --break-system-packages gradio requests pyyaml psutil pandas
+RUN pip install --no-cache-dir --break-system-packages gradio requests pyyaml psutil pandas huggingface_hub
 
 # Set environment
 ENV LLAMA_SERVER_PATH=/usr/local/bin/llama-server

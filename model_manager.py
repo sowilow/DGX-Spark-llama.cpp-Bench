@@ -2,10 +2,12 @@
 import subprocess
 import time
 import os
+import sys
 import requests
 import psutil
 import signal
 import yaml
+from huggingface_hub import hf_hub_download
 
 class VLMModelManager:
     def __init__(self):
@@ -22,6 +24,11 @@ class VLMModelManager:
         
         print("--- Environment Check (DGX Spark / Arm / CUDA 13) ---")
         self._detect_hardware()
+        self._check_and_download_models()
+        
+        # 가동 시 모든 모델을 미리 로드할지 결정 (config.yaml 기반)
+        if self.hw_config.get('pre_start_all', True):
+            self.start_all_servers()
 
     def _detect_hardware(self):
         try:
@@ -44,6 +51,74 @@ class VLMModelManager:
                             return os.path.join(root, basename)
         return real_p
 
+    def _check_and_download_models(self):
+        missing_files = []
+        models_dir = os.path.join(self.base_dir, "models")
+        os.makedirs(models_dir, exist_ok=True)
+
+        for model_name, cfg in self.models.items():
+            for key in ['model_path', 'mmproj_path']:
+                path = cfg.get(key)
+                if path:
+                    abs_path = os.path.join(self.base_dir, path)
+                    # 파일이 없거나 크기가 너무 작으면(1MB 이하) 누락된 것으로 간주
+                    if not os.path.exists(abs_path) or os.path.getsize(abs_path) < 1024 * 1024:
+                        missing_files.append({
+                            'repo_id': cfg.get('repo_id'),
+                            'filename': os.path.basename(path),
+                            'target_path': abs_path,
+                            'model_name': model_name
+                        })
+
+        if not missing_files:
+            print("모든 모델 파일이 존재합니다.")
+            return
+
+        print(f"\n[!] 다음 {len(missing_files)}개의 모델 파일이 누락되었습니다:")
+        for f in missing_files:
+            print(f" - {f['filename']} (from {f['repo_id']})")
+        
+        # Check for environment variable or TTY
+        auto_download = os.environ.get("AUTO_DOWNLOAD", "").strip().lower() == "y"
+        is_tty = sys.stdin.isatty()
+
+        if auto_download:
+            print("\n환경 변수(AUTO_DOWNLOAD=Y)가 설정되어 자동 다운로드를 시작합니다.")
+        elif not is_tty:
+            print("\n[!] 비대화형 환경(Docker 등)에서 실행 중이며 승인을 위한 터미널 입력을 받을 수 없습니다.")
+            print("모델 다운로드를 자동화하려면 환경 변수 'AUTO_DOWNLOAD=Y'를 설정해 주세요.")
+            return
+        else:
+            confirm = input("\n모델을 지금 다운로드하시겠습니까? (Y/n): ").strip().lower()
+            if confirm != 'y':
+                print("다운로드를 취소했습니다. 서버가 정상적으로 작동하지 않을 수 있습니다.")
+                return
+
+        print("\n--- 순차 다운로드 시작 ---")
+        for i, f in enumerate(missing_files):
+            print(f"[{i+1}/{len(missing_files)}] 다운로드 중: {f['filename']}...")
+            try:
+                # Special case: Qwen3.5_35B shares 2B mmproj, so it might be in either repo
+                # But we'll try the assigned repo_id first
+                hf_hub_download(
+                    repo_id=f['repo_id'],
+                    filename=f['filename'],
+                    local_dir=models_dir,
+                    local_dir_use_symlinks=False
+                )
+                print(f"완료: {f['filename']}")
+            except Exception as e:
+                print(f"오류 발생 ({f['filename']}): {e}")
+        print("--- 모든 다운로드 작업 완료 ---\n")
+
+    def start_all_servers(self):
+        print("\n--- 모든 모델 서버 일괄 가동 시작 (Pre-start) ---")
+        for model_name in self.models.keys():
+            success = self.start_server(model_name)
+            if not success:
+                print(f"[!] {model_name} 서버 가동에 실패했습니다.")
+        print("--- 모든 모델 서버 가동 작업 완료 ---\n")
+
     def start_server(self, model_name):
         # If already running, return
         if model_name in self.processes and self.processes[model_name].poll() is None:
@@ -57,6 +132,7 @@ class VLMModelManager:
         # Build command
         cmd = [
             self.server_bin,
+            "--host", "0.0.0.0",
             "-m", model_path,
             "--mmproj", mmproj_path,
             "--port", str(port),

@@ -1,0 +1,6 @@
+.git
+models
+__pycache__
+*.log
+venv
+.env

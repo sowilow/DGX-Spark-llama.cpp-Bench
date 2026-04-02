@@ -1,1 +1,6 @@
-gradio\nrequests\npyyaml\npsutil\npandas
+gradio
+requests
+pyyaml
+psutil
+pandas
+huggingface_hub
