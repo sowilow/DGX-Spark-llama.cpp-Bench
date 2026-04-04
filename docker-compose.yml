@@ -22,6 +22,8 @@ services:
       - "8083:8083"      # InternVL 3.5 2B
       - "8084:8084"      # LFM 2.5 1.6B
       - "8085:8085"      # Next2 Air
+      - "8086:8086"      # Gemma 4 26B (NEW)
+      - "8087:8087"      # Gemma 4 E2B (NEW)
     volumes:
       - .:/app
       - ./models:/app/models

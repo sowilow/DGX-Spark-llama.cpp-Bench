@@ -35,3 +35,13 @@ models:
     repo_id: "sowilow/Next2-Air-DGX-Spark-GGUF"
     model_path: "models/next2-air-q4_k_m.gguf"
     mmproj_path: "models/next2-air-mmproj-f16.gguf"
+  Gemma-4_26B:
+    port: 8086
+    repo_id: "sowilow/Gemma-4-DGX-Spark-GGUF"
+    model_path: "models/gemma-4-26b-a4b-it-q4_k_m.gguf"
+    mmproj_path: "models/gemma-4-26b-vision-mmproj-f16.gguf"
+  Gemma-4_E2B:
+    port: 8087
+    repo_id: "sowilow/Gemma-4-DGX-Spark-GGUF"
+    model_path: "models/gemma-4-e2b-it-q4_k_m.gguf"
+    mmproj_path: "models/gemma-4-e2b-vision-mmproj-f16.gguf"

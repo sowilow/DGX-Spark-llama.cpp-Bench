@@ -246,7 +246,7 @@ class VLMModelManager:
         
         start_time = time.time()
         try:
-            response = requests.post(url, json=payload, timeout=120)
+            response = requests.post(url, json=payload, timeout=300)
             end_time = time.time()
             
             if response.status_code == 200:

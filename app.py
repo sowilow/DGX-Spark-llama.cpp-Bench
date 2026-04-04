@@ -66,6 +66,13 @@ def run_benchmark(model_names, test_text, system_prompt, max_tokens, temperature
                 "Avg Output TPS (19-runs)": round(avg_output, 2),
                 "Avg Latency (s)": round(avg_duration, 3)
             })
+        else:
+            results.append({
+                "Model": model_name,
+                "Avg Input TPS (19-runs)": "Failed",
+                "Avg Output TPS (19-runs)": "Failed",
+                "Avg Latency (s)": "Timeout / Error"
+            })
             
     yield pd.DataFrame(results), "벤치마크 완료"
 

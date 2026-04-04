@@ -8,6 +8,7 @@
 | **InternVL 3.5** | [InternVL3.5](https://github.com/OpenGVLab/InternVL) | OpenGVLab | Apache 2.0 |
 | **LFM 2.5 (VL)** | [LFM-1.6B-VL](https://liquid.ai) | Liquid AI | Liquid Community |
 | **Next2-Air** | [Next-2-Air](https://huggingface.co/thelamapi/Next-2-Air-GGUF) | thelamapi / Next-2 | Apache 2.0 |
+| **Gemma 4 (26B/E2B)** | [Gemma-4](https://github.com/google-deepmind/gemma) | Google DeepMind | Apache 2.0 |
 
 ---
 
@@ -20,6 +21,8 @@ NVIDIA Blackwell (DGX Spark) 하드웨어에 최적화된 GGUF 가중치는 아�
 - **LFM 2.5 1.6B-GGUF**: [sowilow/LFM-2.5-1.6B-DGX-Spark-GGUF](https://huggingface.co/sowilow/LFM-2.5-1.6B-DGX-Spark-GGUF)
 - **InternVL 3.5 2B-GGUF**: [sowilow/InternVL-3.5-2B-DGX-Spark-GGUF](https://huggingface.co/sowilow/InternVL-3.5-2B-DGX-Spark-GGUF)
 - **Next2-Air-GGUF**: [sowilow/Next2-Air-DGX-Spark-GGUF](https://huggingface.co/sowilow/Next2-Air-DGX-Spark-GGUF)
+- **Gemma 4 26B-GGUF**: [sowilow/Gemma-4-DGX-Spark-GGUF](https://huggingface.co/sowilow/Gemma-4-DGX-Spark-GGUF)
+- **Gemma 4 E2B-GGUF**: [sowilow/Gemma-4-DGX-Spark-GGUF](https://huggingface.co/sowilow/Gemma-4-DGX-Spark-GGUF)
 
 ---
 

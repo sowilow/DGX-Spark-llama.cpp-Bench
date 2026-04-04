@@ -1,8 +1,14 @@
 # Models (Large Files)
-models/*.gguf
-models/*.bin
-models/*.zip
-models/*.tar.gz
+models/
+llama.cpp/
+*.gguf
+*.bin
+*.zip
+*.tar.gz
+*.safetensors
+*.json
+*.jinja
+*.gitattributes
 
 # Logs and Temp files
 *.log
@@ -12,3 +18,4 @@ __pycache__/
 
 # Docker
 .docker
+.dockerignore
