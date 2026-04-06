@@ -14,16 +14,17 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     ports:
-      - "7860:7860"      # Web UI
-      - "8081:8081"      # Qwen 2B
-      - "8082:8082"      # Qwen 35B
-      - "8083:8083"      # InternVL 3.5 2B
-      - "8084:8084"      # LFM 2.5 1.6B
-      - "8085:8085"      # Next2 Air
-      - "8086:8086"      # Gemma 4 26B (NEW)
-      - "8087:8087"      # Gemma 4 E2B (NEW)
+      - "7860:7860" # Web UI
+      - "8081:8081" # Qwen 2B
+      - "8082:8082" # Qwen 35B
+      - "8083:8083" # InternVL 3.5 2B
+      - "8084:8084" # LFM 2.5 1.6B
+      - "8085:8085" # LFM 2.5 1.2B
+      - "8086:8086" # Next2 Air
+      - "8087:8087" # Gemma 4 26B
+      - "8088:8088" # Gemma 4 E2B
     volumes:
       - .:/app
       - ./models:/app/models

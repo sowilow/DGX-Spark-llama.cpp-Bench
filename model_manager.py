@@ -135,20 +135,24 @@ class VLMModelManager:
         cfg = self.models[model_name]
         port = cfg['port']
         model_path = self._resolve_path(cfg['model_path'])
-        mmproj_path = self._resolve_path(cfg['mmproj_path'])
         
         # Build command
         cmd = [
             self.server_bin,
             "--host", "0.0.0.0",
             "-m", model_path,
-            "--mmproj", mmproj_path,
             "--port", str(port),
             "-ngl", str(self.hw_config['gpu_layers']),
             "--ctx-size", str(self.hw_config['ctx_size']),
             "--flash-attn", self.hw_config['flash_attn'],
             "--reasoning", reasoning
         ]
+
+        # Add mmproj if available (for VL models)
+        mmproj_rel_path = cfg.get('mmproj_path')
+        if mmproj_rel_path:
+            mmproj_path = self._resolve_path(mmproj_rel_path)
+            cmd.extend(["--mmproj", mmproj_path])
         
         print(f"--- [DEBUG] Starting server for {model_name} on port {port} (Reasoning: {reasoning}) ---")
         log_path = os.path.join(self.base_dir, f"server_{model_name}.log")
