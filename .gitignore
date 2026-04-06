@@ -1,5 +1,6 @@
 # Models (Large Files)
 models/
+models__/
 llama.cpp/
 *.gguf
 *.bin

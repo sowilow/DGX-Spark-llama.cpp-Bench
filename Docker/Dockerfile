@@ -17,7 +17,7 @@ RUN cmake -B build \
     -DCMAKE_CUDA_ARCHITECTURES=121 \
     -DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/cuda/lib64/stubs -lcuda" \
     -DGGML_CUDA_F16=ON && \
-    cmake --build build --config Release -j$(nproc) --target llama-server && \
+    cmake --build build --config Release -j$(nproc) --target llama-server --target llama-quantize && \
     mkdir -p /app/libs && find build -name "*.so*" -exec cp -P {} /app/libs/ \;
 
 # --- Stage 2: Runtime ---
@@ -29,8 +29,9 @@ RUN apt-get update && apt-get install -y python3 python3-pip libcurl4 \
 WORKDIR /app
 COPY . /app
 
-# Copy compiled binary and all necessary shared libraries
+# Copy compiled binaries and all necessary shared libraries
 COPY --from=builder /app/llama.cpp/build/bin/llama-server /usr/local/bin/
+COPY --from=builder /app/llama.cpp/build/bin/llama-quantize /usr/local/bin/
 RUN mkdir -p /usr/local/lib/llama.cpp
 COPY --from=builder /app/libs/* /usr/local/lib/llama.cpp/
 RUN echo "/usr/local/lib/llama.cpp" > /etc/ld.so.conf.d/llama_cpp.conf && ldconfig
