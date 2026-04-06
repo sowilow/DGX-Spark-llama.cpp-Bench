@@ -4,25 +4,52 @@
 [![CUDA: 13.0](https://img.shields.io/badge/CUDA-13.0-blue.svg)](https://developer.nvidia.com/cuda-toolkit)
 [![Blackwell: Optimized](https://img.shields.io/badge/Blackwell-SM_121-green.svg)](https://www.nvidia.com/en-us/data-center/gb200-nvl72/)
 
-이 레포지토리는 **NVIDIA Blackwell (DGX Spark)** 아키텍처에 최적화된 **VLM(Vision Language Model) 추론 성능 벤치마크 도구**입니다. 5종의 최신 VLM 모델을 동시에 구동하고, 정밀한 반복 측정을 통해 실제 TPS(Tokens Per Second)를 산출하는 데 목적이 있습니다.
+This repository is a **VLM (Vision Language Model) Inference Performance Benchmark Tool** optimized for the **NVIDIA Blackwell (DGX Spark)** architecture. It aims to serve 7 state-of-the-art VLM models simultaneously and calculate precision TPS (Tokens Per Second) through rigorous repeated measurements.
 
 ---
 
-## ✨ 주요 특징
-- **5종 모델 동시 서빙**: Qwen 2.5(2B, 35B), InternVL 3.5, LFM 2.5, Next2 Air를 개별 포트(8081-8085)에서 동시에 구동.
+## ✨ Key Features (English)
+- **7-Model Simultaneous Serving**: Run Qwen 3.5 (2B, 35B), InternVL 3.5, LFM 2.5, Next2 Air, and Gemma 4 (26B, E2B) on individual ports (**8081-8087**).
+- **Professional Benchmark Engine**: Conduct 20 consecutive inference runs and calculate **Average TPS over 19 runs**, excluding the first warmup data.
+- **Blackwell Optimization**: Native utilization of CUDA 13.0 and SM121 hardware acceleration (Flash Attention, Native FP4, etc.) for peak GGUF inference.
+
+## 📦 Getting Started (Docker)
+
+### 1. Prerequisites
+- **GPU**: NVIDIA Blackwell (SM121) Recommended. (Other GPUs require modifying `CMAKE_CUDA_ARCHITECTURES` in `Dockerfile`)
+- **VRAM**: 100GB+ VRAM required for full model operation (Optimized for GB10 124GB).
+- **Model Files**: Place GGUF and mmproj files in the `models/` folder. (See [MODEL_CREDITS.md](./MODEL_CREDITS.md) for details)
+
+### 2. Run (Using Pre-built Image)
+```bash
+# Pull the latest image
+docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:latest
+
+# Run (All model servers start automatically)
+docker-compose up -d
+```
+
+---
+
+# 🚀 VLM Research Bench UI (간편 버전)
+
+이 레포지토리는 **NVIDIA Blackwell (DGX Spark)** 아키텍처에 최적화된 **VLM(Vision Language Model) 추론 성능 벤치마크 도구**입니다. 7종의 최신 VLM 모델을 동시에 구동하고, 정밀한 반복 측정을 통해 실제 TPS(Tokens Per Second)를 산출하는 데 목적이 있습니다.
+
+---
+
+## ✨ 주요 특징 (한국어)
+- **7종 모델 동시 서빙**: Qwen 3.5 (2B, 35B), InternVL 3.5, LFM 2.5, Next2 Air, 그리고 Gemma 4 (26B, E2B)를 개별 포트(**8081-8087**)에서 동시에 구동.
 - **전문 벤치마크 엔진**: 20회 연속 추론 수행 및 첫 번째 웜업(Warmup) 데이터를 제외한 **19회 평균 TPS** 산출.
 - **Blackwell 최적화**: CUDA 13.0 및 SM121 하드웨어 가속(Flash Attention, Native FP4 등)을 활용한 GGUF 추론 최대로 수행.
 
 ## 📦 설치 및 구동 (Docker)
 
 ### 1. 전제 조건 (Prerequisites)
-- **GPU**: NVIDIA Blackwell (SM121) 권장 (기타 GPU는 `Dockerfile`의 `CMAKE_CUDA_ARCHITECTURES` 수정 필요)
+- **GPU**: NVIDIA Blackwell (SM121) 권장. (기타 GPU는 `Dockerfile`의 `CMAKE_CUDA_ARCHITECTURES` 수정 필요)
 - **VRAM**: 전체 모델 가동 시 최소 100GB+ VRAM 필요 (GB10 124GB 최적)
-- **Model Files**: 각 모델의 GGUF 및 mmproj 파일을 `models/` 폴더에 배치하십시오. (상세 정보는 [MODEL_CREDITS.md](./MODEL_CREDITS.md) 참조)
+- **Model Files**: 각 모델의 GGUF 및 mmproj 파일을 `models/` 폴더에 배치하십시오. (상세 내역은 [MODEL_CREDITS.md](./MODEL_CREDITS.md) 참조)
 
 ### 2. 실행 (사전 빌드된 이미지 사용)
-로컬에서 직접 빌드하지 않고, GitHub에 이미 업로드된 최신 이미지를 사용할 수 있습니다.
-
 ```bash
 # 이미지 내려받기
 docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:latest
@@ -31,33 +58,12 @@ docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:latest
 docker-compose up -d
 ```
 
-### 3. 설정 변경 (Configuration)
-`config/config.yaml` 파일을 수정하여 가동 방식을 제어할 수 있습니다.
-
-| 설정 항목 | 설명 | 기본값 |
-| :--- | :--- | :--- |
-| `pre_start_all` | 시작 시 모든 모델 서버(8081-8085)를 즉시 가동할지 여부 | `true` |
-| `gpu_layers` | GPU로 오프로딩할 레이어 수 (999는 전체 오프로딩) | `999` |
-| `ctx_size` | 컨텍스트 창 크기 (토큰 수) | `16384` |
-| `AUTO_DOWNLOAD` | (환경 변수) 모델 부재 시 자동 다운로드 여부 | `Y` |
-
-### 4. 소스 코드에서 실행 (직접 빌드)
-```bash
-# 컨테이너 빌드 및 백그라운드 실행
-docker-compose up -d --build
-```
-UI 접속: `http://localhost:7860`
-
 ---
 
-## ⚖️ 라이선스 및 면책 조항 (License & Disclaimer)
+## ⚖️ License & Disclaimer / 라이선스 및 면책 조항
+1. **Software License**: The source code is under **MIT License**.
+2. **Model Weights License**: Individual model weights follow their respective licenses (Google, Alibaba, OpenGVLab, Liquid AI, etc.).
+3. **Liability Disclaimer**: This tool is for performance measurement and research purposes only. Users are responsible for legal compliance regarding model outputs and commercial usage.
 
-1. **Software License**: 본 프로젝트의 소스 코드는 **MIT License**를 따릅니다.
-2. **Model Weights License**: 구동되는 각 모델 가중치는 원저작자의 개별 라이선스(Apache 2.0, Qwen, Liquid AI 등)를 따릅니다.
-3. **Liability Disclaimer**: 본 도구는 성능 측정 및 연구 목적으로만 제공되며, 모델 출력물에 의한 법적 책임이나 상업적 이용에 따른 라이선스 위반 책임은 사용자에게 있습니다.
-
-상세 내용은 [LICENSE](./LICENSE) 파일을 확인해 주십시오.
-
-## 🤝 기여 (Attribution)
-본 프로젝트는 **NVIDIA DGX Spark** 개발자 커뮤니티와 여러 VLM 연구 그룹의 성과물을 기반으로 제작되었습니다.
-- [MODEL_CREDITS.md](./MODEL_CREDITS.md): 각 모델에 대한 상세 정보
+---
+*Developed and Optimized on NVIDIA Blackwell (DGX Spark) by sowilow*
