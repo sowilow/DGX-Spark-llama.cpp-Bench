@@ -2,6 +2,7 @@
 models/
 models__/
 llama.cpp/
+llama.cpp_backup/
 *.gguf
 *.bin
 *.zip
