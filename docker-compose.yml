@@ -1,6 +1,4 @@
 # bench_UI_simple/docker-compose.yml
-version: '3.8'
-
 services:
   vlm-benchmark:
     image: ghcr.io/sowilow/dgx-spark-llama.cpp-bench:latest
@@ -16,16 +14,8 @@ services:
               count: all
               capabilities: [ gpu ]
     ports:
-      - "7860:7860" # Web UI
-      - "8081:8081" # Qwen 2B
-      - "8082:8082" # Qwen 35B
-      - "8083:8083" # InternVL 3.5 2B
-      - "8084:8084" # LFM 2.5 1.6B
-      - "8085:8085" # LFM 2.5 1.2B (Q4)
-      - "8086:8086" # Next2 Air
-      - "8087:8087" # Gemma 4 26B
-      - "8088:8088" # Gemma 4 E2B
-      - "8089:8089" # LFM 2.5 1.2B (Q8)
+      - "7860:7860" # Main Web UI (Unified Port 8000)
+      - "8100-8150:8100-8150" # Pre-allocated Model Server Ports
     volumes:
       - .:/app
       - ./models:/app/models

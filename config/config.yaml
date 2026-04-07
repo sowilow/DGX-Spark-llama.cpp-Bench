@@ -1,51 +1,104 @@
 # bench_UI_simple/config/config.yaml
 # NVIDIA Blackwell (DGX Spark) Optimized Configuration
+# Model families grouped by port range for clarity and scalability.
 
 hardware:
   gpu_layers: 999
   ctx_size: 16384
   flash_attn: "on"
   reasoning: "off"
-  pre_start_all: true  # 부팅 시 모든 모델 서버를 미리 가동할지 여부
+  pre_start_all: false  # 부팅 시 모든 모델 서버를 미리 가동할지 여부 (VRAM 관리 위해 false 권장)
 
-# Simultaneous multi-model serving configuration
+# Port Allocation Strategy:
+# 8000: Main UI (Docker mapping 8000:7860)
+# 810x: Qwen Series
+# 811x: Gemma Series
+# 812x: LFM Series
+# 813x: GPT-OSS Series
+# 814x: Vision/Other Series
+
 models:
-  Qwen3.5_2B:
-    port: 8081
-    repo_id: "sowilow/Qwen3.5-2B-DGX-Spark-GGUF"
+  # --- Qwen Series (810x) ---
+  Qwen-3.5-2B-Q4:
+    port: 8101
+    repo_id: "sowilow/qwen-3-5-2b-it-DGX-Spark-GGUF"
     model_path: "models/qwen3.5-2b-q4_k_m.gguf"
     mmproj_path: "models/qwen3.5-2b-mmproj-f16.gguf"
-  Qwen3.5_35B:
-    port: 8082
-    repo_id: "sowilow/Qwen3.5-35B-A3B-DGX-Spark-GGUF"
+  Qwen-3.5-2B-Q8:
+    port: 8102
+    repo_id: "sowilow/qwen-3-5-2b-it-DGX-Spark-GGUF"
+    model_path: "models/qwen3.5-2b-q8_0.gguf"
+    mmproj_path: "models/qwen3.5-2b-mmproj-f16.gguf"
+  Qwen-3.5-35B-Q4:
+    port: 8103
+    repo_id: "sowilow/qwen-3-5-35b-it-DGX-Spark-GGUF"
     model_path: "models/qwen3.5-35b-a3b-q4_k_m.gguf"
-    mmproj_path: "models/qwen3.5-2b-mmproj-f16.gguf" # Shares same vision projector
-  InternVL3.5_2B:
-    port: 8083
-    repo_id: "sowilow/InternVL-3.5-2B-DGX-Spark-GGUF"
-    model_path: "models/internvl3_5-2b-flash-q4_k_m.gguf"
-    mmproj_path: "models/internvl3_5-2b-flash-mmproj.gguf"
-  LFM2.5_1.6B:
-    port: 8084
-    repo_id: "sowilow/LFM-2.5-1.6B-DGX-Spark-GGUF"
-    model_path: "models/LFM2.5-VL-1.6B.Q4_K_M.gguf"
-    mmproj_path: "models/mmproj-f16.gguf"
-  LFM2.5_1.2B:
-    port: 8085
-    repo_id: "sowilow/LFM2.5-1.2B-Instruct-DGX-Spark-GGUF"
-    model_path: "models/lfm2.5-1.2b-instruct-q4_k_m.gguf"
-  Next2_Air:
-    port: 8086
-    repo_id: "sowilow/Next2-Air-DGX-Spark-GGUF"
-    model_path: "models/next2-air-q4_k_m.gguf"
-    mmproj_path: "models/next2-air-mmproj-f16.gguf"
-  Gemma-4_26B:
-    port: 8087
+    mmproj_path: "models/qwen3.5-2b-mmproj-f16.gguf" # Shared mmproj
+
+  # --- Gemma Series (811x) ---
+  Gemma-4-26B-Q4:
+    port: 8111
     repo_id: "sowilow/gemma-4-26b-a4b-it-DGX-Spark-GGUF"
     model_path: "models/gemma-4-26b-a4b-it-q4_k_m.gguf"
     mmproj_path: "models/gemma-4-26b-vision-mmproj-f16.gguf"
-  Gemma-4_E2B:
-    port: 8088
+  Gemma-4-26B-F16:
+    port: 8112
+    repo_id: "sowilow/gemma-4-26b-a4b-it-DGX-Spark-GGUF"
+    model_path: "models/gemma-4-26B-A4B-it-f16.gguf"
+    mmproj_path: "models/gemma-4-26b-vision-mmproj-f16.gguf"
+  Gemma-4-E2B-Q4:
+    port: 8113
     repo_id: "sowilow/gemma-4-e2b-it-DGX-Spark-GGUF"
     model_path: "models/gemma-4-e2b-it-q4_k_m.gguf"
     mmproj_path: "models/gemma-4-e2b-vision-mmproj-f16.gguf"
+  Gemma-4-E2B-Q8:
+    port: 8114
+    repo_id: "sowilow/gemma-4-e2b-it-DGX-Spark-GGUF"
+    model_path: "models/gemma-4-e2b-it-q8_0.gguf"
+    mmproj_path: "models/gemma-4-e2b-vision-mmproj-f16.gguf"
+  Gemma-4-E2B-F16:
+    port: 8115
+    repo_id: "sowilow/gemma-4-e2b-it-DGX-Spark-GGUF"
+    model_path: "models/gemma-4-E2B-it-f16.gguf"
+    mmproj_path: "models/gemma-4-e2b-vision-mmproj-f16.gguf"
+
+  # --- LFM Series (812x) ---
+  LFM-2.5-1.2B-Q4:
+    port: 8121
+    repo_id: "sowilow/LFM-2-5-1.2B-it-DGX-Spark-GGUF"
+    model_path: "models/lfm2.5-1.2b-instruct-q4_k_m.gguf"
+  LFM-2.5-1.2B-Q8:
+    port: 8122
+    repo_id: "sowilow/LFM-2-5-1.2B-it-DGX-Spark-GGUF"
+    model_path: "models/lfm2.5-1.2b-instruct-q8_0.gguf"
+  LFM-2.5-1.2B-F16:
+    port: 8123
+    repo_id: "sowilow/LFM-2-5-1.2B-it-DGX-Spark-GGUF"
+    model_path: "models/LFM2.5-1.2B-Instruct.F16.gguf"
+  LFM-2.5-VL-1.6B-Q4:
+    port: 8124
+    repo_id: "sowilow/LFM-2-5-VL-1.6B-DGX-Spark-GGUF"
+    model_path: "models/LFM2.5-VL-1.6B.Q4_K_M.gguf"
+    mmproj_path: "models/mmproj-f16.gguf"
+
+  # --- GPT-OSS Series (813x) ---
+  GPT-OSS-20B-Q4:
+    port: 8131
+    repo_id: "sowilow/gpt-oss-20b-DGX-Spark-GGUF"
+    model_path: "models/gpt-oss-20b-q4_mxfp4.gguf"
+  GPT-OSS-20B-Q8:
+    port: 8132
+    repo_id: "sowilow/gpt-oss-20b-DGX-Spark-GGUF"
+    model_path: "models/gpt-oss-20b-q8_0.gguf"
+
+  # --- Vision/Other Series (814x) ---
+  InternVL-3.5-2B-Q4:
+    port: 8141
+    repo_id: "sowilow/internvl3_5-2b-flash-DGX-Spark-GGUF"
+    model_path: "models/internvl3_5-2b-flash-q4_k_m.gguf"
+    mmproj_path: "models/internvl3_5-2b-flash-mmproj.gguf"
+  Next2-Air-Q4:
+    port: 8142
+    repo_id: "sowilow/next2-air-DGX-Spark-GGUF"
+    model_path: "models/next2-air-q4_k_m.gguf"
+    mmproj_path: "models/next2-air-mmproj-f16.gguf"

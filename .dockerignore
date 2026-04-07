@@ -1,6 +1,11 @@
-.git
-models
-__pycache__
+models/
+llama.cpp/.git/
+llama.cpp/.github/
+llama.cpp/build/CMakeFiles/
+llama.cpp/build/src/
+llama.cpp/build/ggml/
+llama.cpp/build/common/
+llama.cpp/tests/
+__pycache__/
 *.log
-venv
-.env
+.git/
