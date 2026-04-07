@@ -21,3 +21,6 @@ __pycache__/
 # Docker
 .docker
 .dockerignore
+
+# Temp Files
+temp_*
