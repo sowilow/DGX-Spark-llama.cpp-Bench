@@ -17,18 +17,25 @@ def chat_interface(model_name, message, history, system_prompt, max_tokens, temp
     if user_text: user_content.append({"type": "text", "text": user_text})
     for f in user_files: user_content.append({"type": "file", "file": {"path": f}})
     history.append({"role": "user", "content": user_content})
+    
+    # Placeholder for streaming
+    history.append({"role": "assistant", "content": ""})
     yield history, "Waiting...", "Waiting..."
 
-    # Query model
+    # Query model with stream
     image_path = user_files[0] if user_files else None
-    resp = manager.query(model_name, user_text, image_path, system_prompt, max_tokens, temperature, reasoning=reasoning)
     
-    if resp["status"] == "success":
-        history.append({"role": "assistant", "content": resp["text"]})
-        yield history, f"{resp['input_tps']:.2f} tokens/s", f"{resp['output_tps']:.2f} tokens/s"
-    else:
-        history.append({"role": "assistant", "content": f"Error: {resp['message']}"})
-        yield history, "Error", "Error"
+    for resp in manager.stream_query(model_name, user_text, image_path, system_prompt, max_tokens, temperature, reasoning=reasoning):
+        if resp["status"] == "success":
+            history[-1]["content"] = resp["text"]
+            yield history, "Streaming...", "Streaming..."
+        else:
+            history[-1]["content"] = f"Error: {resp['message']}"
+            yield history, "Error", "Error"
+            return
+    
+    # Final update for TPS (since stream doesn't give precise TPS easily, we mark as Done)
+    yield history, "Done (Stream)", "Done (Stream)"
 
 def run_benchmark(model_names, test_text, system_prompt, max_tokens, temperature, reasoning):
     if not test_text: return pd.DataFrame(), "테스트 텍스트를 입력하세요."
@@ -101,6 +108,7 @@ def toggle_server(model_name, action, reasoning=False):
 css = """
 footer {visibility: hidden}
 .status-box { background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+.info-text { font-size: 0.85em; color: #666; margin-top: -10px; margin-bottom: 15px; }
 """
 
 with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
@@ -116,16 +124,43 @@ with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
                     model_dropdown = gr.Dropdown(choices=model_list, value=model_list[0], label="모델 선택")
                     system_input = gr.Textbox(value="You are a helpful assistant.", label="System Prompt", lines=3)
                     with gr.Row():
-                        max_tokens = gr.Slider(64, 4096, value=512, step=64, label="Max Tokens")
+                        max_tokens = gr.Slider(64, 4096, value=1024, step=64, label="Max Tokens")
                         temp = gr.Slider(0.0, 1.5, value=0.7, step=0.1, label="Temperature")
+                    
                     reasoning_opt = gr.Checkbox(label="Reasoning (Chain of Thought)", value=False)
+                    reasoning_info = gr.Markdown("Check reasoning support...", elem_classes="info-text")
                 
                 with gr.Column(scale=2):
-                    chatbot = gr.Chatbot(label="VLM Chat", height=500)
+                    chatbot = gr.Chatbot(label="VLM Chat", height=600, type="messages")
                     with gr.Row():
                         in_tps = gr.Textbox(label="Input Speed (TPS)", interactive=False)
                         out_tps = gr.Textbox(label="Output Speed (TPS)", interactive=False)
                     chat_input = gr.MultimodalTextbox(interactive=True, placeholder="Text or Image...", show_label=False)
+
+            def update_reasoning_ui(model_name):
+                info = manager.get_reasoning_info(model_name)
+                status = info["status"]
+                label = info["label"]
+                
+                if status == "forced_on":
+                    return gr.update(value=True, interactive=False), f"ℹ️ {label}"
+                elif status == "unsupported":
+                    return gr.update(value=False, interactive=False), f"⚠️ {label}"
+                else:
+                    return gr.update(interactive=True), f"✅ {label}"
+
+            model_dropdown.change(
+                update_reasoning_ui, 
+                inputs=[model_dropdown], 
+                outputs=[reasoning_opt, reasoning_info]
+            )
+            
+            # Initialize UI state
+            demo.load(
+                update_reasoning_ui,
+                inputs=[model_dropdown],
+                outputs=[reasoning_opt, reasoning_info]
+            )
             
             chat_input.submit(
                 chat_interface,

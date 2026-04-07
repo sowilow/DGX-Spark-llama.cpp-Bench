@@ -8,20 +8,23 @@ This repository is a **VLM (Vision Language Model) Inference Performance Benchma
 
 ---
 
-## ✨ Key Features (v0.1.2)
+## ✨ Key Features (v0.1.3)
+- **Real-time Streaming Output**: Experience character-by-character text generation for smoother interactions.
+- **Intelligent Reasoning UI**:
+    - **Thought Visualization**: Automatically extract and display thinking processes (`reasoning_content`) in collapsible Markdown blocks.
+    - **Model-Specific Logic**: Intelligent detection of reasoning support for different model families (GPT-OSS, Qwen, Gemma, etc.).
 - **Multi-Model Simultaneous Serving**: Run Qwen 3.5, InternVL 3.5, LFM 2.5, Next2 Air, Gemma 4, and **OpenAI GPT-OSS 20B** on individual ports.
 - **Unified Port Mapping**: 
     - **7860**: Gradio Web UI
     - **8100-8150**: Pre-allocated Model Server Ports (Categorized by family)
-- **Professional Benchmark Engine**: Conduct 20 consecutive inference runs and calculate **Average TPS over 19 runs**, excluding the first warmup data.
 - **Blackwell Optimization**: Native utilization of CUDA 13.0 and SM121 hardware acceleration (Flash Attention, Native FP4/MXFP4, etc.).
 
 ## 📦 Getting Started (Docker)
 
 ### 1. Prerequisites
 - **GPU**: NVIDIA Blackwell (SM121) Recommended.
-- **VRAM**: 100GB+ VRAM required for full model operation (Optimized for GB10 124GB).
-- **Model Files**: Place GGUF and mmproj files in the `models/` folder. (See [MODEL_CREDITS.md](./MODEL_CREDITS.md) for details)
+- **VRAM**: 100GB+ VRAM required for full model operation.
+- **Model Files**: Place GGUF and mmproj files in the `models/` folder.
 
 ### 2. Run (Using Pre-built Image)
 ```bash
@@ -40,20 +43,23 @@ docker compose up -d
 
 ---
 
-## ✨ 주요 특징 (v0.1.2)
+## ✨ 주요 특징 (v0.1.3)
+- **실시간 스트리밍 출력**: 텍스트 생성이 한 글자씩 실시간으로 출력되어 더욱 매끄러운 사용자 경험을 제공합니다.
+- **지능형 추론 가시화 (Reasoning UI)**:
+    - **추론 과정 자동 추출**: 모델의 생각하는 과정(`reasoning_content`)을 자동으로 감지하여 접기/펼치기 가능한 Markdown 블록으로 표시합니다.
+    - **모델별 지능형 감지**: GPT-OSS, Qwen, Gemma 등 각 모델 제품군의 특성에 맞춰 추론 옵션을 자동으로 제어합니다.
 - **복수 모델 동시 서빙**: Qwen 3.5, InternVL 3.5, LFM 2.5, Next2 Air, Gemma 4, 그리고 **OpenAI GPT-OSS 20B**를 개별 포트에서 동시에 구동 가능.
 - **통합 포트 매핑**:
     - **7860**: Gradio 웹 인터페이스 (UI)
     - **8100-8150**: 모델 서버 전용 포트 (제품군별 그룹화)
-- **전문 벤치마크 엔진**: 20회 연속 추론 수행 및 첫 번째 웜업(Warmup) 데이터를 제외한 **19회 평균 TPS** 산출.
 - **Blackwell 최적화**: CUDA 13.0 및 SM121 하드웨어 가속(Flash Attention, Native FP4/MXFP4 등) 활용.
 
 ## 📦 설치 및 구동 (Docker)
 
 ### 1. 전제 조건 (Prerequisites)
 - **GPU**: NVIDIA Blackwell (SM121) 권장.
-- **VRAM**: 전체 모델 가동 시 최소 100GB+ VRAM 필요 (GB10 124GB 최적)
-- **Model Files**: 각 모델의 GGUF 및 mmproj 파일을 `models/` 폴더에 배치하십시오. (상세 내역은 [MODEL_CREDITS.md](./MODEL_CREDITS.md) 참조)
+- **VRAM**: 전체 모델 가동 시 최소 100GB+ VRAM 필요.
+- **Model Files**: 각 모델의 GGUF 및 mmproj 파일을 `models/` 폴더에 배치하십시오.
 
 ### 2. 실행 (사전 빌드된 이미지 사용)
 ```bash

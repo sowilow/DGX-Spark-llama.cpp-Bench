@@ -23,6 +23,16 @@ class VLMModelManager:
         self.running_reasoning = {} # {model_name: "on" or "off"}
         self.server_bin = "/usr/local/bin/llama-server"
         
+        # Reasoning Configuration (Problem 2, 3 Mitigation)
+        self.reasoning_config = {
+            "GPT-OSS": {"status": "forced_on", "label": "Always-on Reasoning (Model Design)"},
+            "LFM": {"status": "unsupported", "label": "Reasoning not supported for this model"},
+            "InternVL": {"status": "unsupported", "label": "Reasoning not supported for this model"},
+            "Qwen": {"status": "supported", "label": "Toggleable Reasoning"},
+            "Gemma": {"status": "supported", "label": "Toggleable Reasoning"},
+            "Next2": {"status": "supported", "label": "Toggleable Reasoning"}
+        }
+        
         print("--- Environment Check (DGX Spark / Arm / CUDA 13) ---")
         self._detect_hardware()
         self._check_and_download_models()
@@ -131,6 +141,13 @@ class VLMModelManager:
         # reasoning이 bool일 경우 문자열 "on"/"off"로 변환
         if isinstance(reasoning, bool):
             reasoning = "on" if reasoning else "off"
+
+        # Apply Model-specific overrides
+        family = next((f for f in self.reasoning_config if f in model_name), None)
+        if family:
+            status = self.reasoning_config[family]["status"]
+            if status == "forced_on": reasoning = "on"
+            elif status == "unsupported": reasoning = "off"
 
         cfg = self.models[model_name]
         port = cfg['port']
@@ -255,8 +272,14 @@ class VLMModelManager:
             
             if response.status_code == 200:
                 result = response.json()
-                text = result["choices"][0]["message"]["content"]
-                usage = result.get("usage", {})
+                msg = result["choices"][0]["message"]
+                text = msg.get("content", "")
+                reasoning_text = msg.get("reasoning_content", "")
+                
+                # Prepend reasoning if available
+                if reasoning_text:
+                    text = f"<details><summary>Thought</summary>\n\n{reasoning_text}\n\n</details>\n\n{text}"
+                
                 timings = result.get("timings", {})
                 
                 return {
@@ -269,6 +292,87 @@ class VLMModelManager:
             return {"status": "error", "message": response.text}
         except Exception as e:
             return {"status": "error", "message": str(e)}
+
+    def stream_query(self, model_name, prompt, image_path=None, system_prompt="You are a helpful assistant.", max_tokens=512, temperature=0.7, reasoning=None):
+        if reasoning is None:
+            reasoning = self.hw_config.get('reasoning', 'off')
+        
+        if isinstance(reasoning, bool):
+            reasoning = "on" if reasoning else "off"
+            
+        # Current reasoning mode check and restart if needed
+        current_reasoning = self.running_reasoning.get(model_name)
+        if current_reasoning and current_reasoning != reasoning:
+            self.stop_server(model_name)
+
+        if not self.start_server(model_name, reasoning=reasoning):
+            yield {"status": "error", "message": f"Failed to start server for {model_name}"}
+            return
+            
+        port = self.models[model_name]['port']
+        url = f"http://localhost:{port}/v1/chat/completions"
+        
+        # Build messages (Simplified for stream)
+        messages = [{"role": "system", "content": system_prompt}]
+        content = []
+        if image_path:
+            import base64
+            with open(image_path, "rb") as f:
+                img_str = base64.b64encode(f.read()).decode()
+            content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_str}"}})
+        content.append({"type": "text", "text": prompt})
+        messages.append({"role": "user", "content": content})
+        
+        payload = {
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "stream": True
+        }
+        
+        full_content = ""
+        full_reasoning = ""
+        
+        try:
+            response = requests.post(url, json=payload, stream=True, timeout=300)
+            if response.status_code != 200:
+                yield {"status": "error", "message": response.text}
+                return
+
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode('utf-8')
+                    if decoded_line.startswith("data: "):
+                        if decoded_line == "data: [DONE]": break
+                        try:
+                            chunk = json.loads(decoded_line[6:])
+                            delta = chunk["choices"][0]["delta"]
+                            
+                            content_piece = delta.get("content", "")
+                            reasoning_piece = delta.get("reasoning_content", "")
+                            
+                            if reasoning_piece:
+                                full_reasoning += reasoning_piece
+                            if content_piece:
+                                full_content += content_piece
+                            
+                            # Build display text
+                            display_text = ""
+                            if full_reasoning:
+                                display_text = f"<details open><summary>Thinking...</summary>\n\n{full_reasoning}\n\n</details>\n\n"
+                            display_text += full_content
+                            
+                            yield {"status": "success", "text": display_text, "input_tps": 0, "output_tps": 0}
+                        except:
+                            pass
+        except Exception as e:
+            yield {"status": "error", "message": str(e)}
+
+    def get_reasoning_info(self, model_name):
+        family = next((f for f in self.reasoning_config if f in model_name), None)
+        if family:
+            return self.reasoning_config[family]
+        return {"status": "supported", "label": "Toggleable Reasoning"}
 
     def stop_all(self):
         for name, proc in self.processes.items():
