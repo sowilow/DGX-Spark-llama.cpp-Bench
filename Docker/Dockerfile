@@ -30,7 +30,7 @@ RUN ldconfig
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --break-system-packages \
-    gradio requests pyyaml psutil pandas huggingface_hub \
+    "gradio>=5.0.0" requests pyyaml psutil pandas huggingface_hub \
     sentencepiece gguf numpy tqdm
 
 # Set environment

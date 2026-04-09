@@ -7,6 +7,7 @@ import requests
 import psutil
 import signal
 import yaml
+import json
 from huggingface_hub import hf_hub_download
 
 class VLMModelManager:
@@ -363,9 +364,11 @@ class VLMModelManager:
                             display_text += full_content
                             
                             yield {"status": "success", "text": display_text, "input_tps": 0, "output_tps": 0}
-                        except:
+                        except Exception as e:
+                            print(f"--- [DEBUG] Error parsing stream chunk: {e} ---")
                             pass
         except Exception as e:
+            print(f"--- [DEBUG] Stream query exception: {e} ---")
             yield {"status": "error", "message": str(e)}
 
     def get_reasoning_info(self, model_name):
