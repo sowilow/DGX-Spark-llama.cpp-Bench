@@ -8,8 +8,9 @@ This repository is a **VLM (Vision Language Model) Inference Performance Benchma
 
 ---
 
-## ✨ Key Features (v0.1.4)
+## ✨ Key Features (v0.1.5)
 - **Blackwell (DGX Spark) Optimization**: Enhanced performance for ARM64/SM121 with CUDA 13.0 and native FP4 support.
+- **Real-time Performance Metrics**: Visualizes `Input TPS` and `Output TPS` during streaming for precise benchmarking.
 - **Intelligent Reasoning UI**:
     - **Dynamic Detection**: Automatically detects and enables reasoning mode for models like **Gemma-4**.
     - **Thought Visualization**: Professional Markdown blocks for `reasoning_content` in Playground.
@@ -30,7 +31,7 @@ This repository is a **VLM (Vision Language Model) Inference Performance Benchma
 ### 2. Run (Using Pre-built Image)
 ```bash
 # Pull the latest image
-docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:v0.1.4
+docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:v0.1.5
 
 # Run (UI available at http://localhost:7860)
 docker compose up -d
@@ -44,8 +45,9 @@ docker compose up -d
 
 ---
 
-## ✨ 주요 특징 (v0.1.4)
+## ✨ 주요 특징 (v0.1.5)
 - **Blackwell (DGX Spark) 최적화**: ARM64/SM121 환경 최적화 및 CUDA 13.0 FP4 하드웨어 가속 활용.
+- **실시간 성능 지표 시각화**: 스트리밍 중 `Input TPS` 및 `Output TPS`를 실시간으로 표시합니다.
 - **지능형 추론 가시화 (Reasoning UI)**:
     - **자동 감지**: **Gemma-4** 등 추론 지원 모델을 자동으로 인식하여 전용 UI 옵션을 활성화합니다.
     - **과정 시각화**: 모델의 생각하는 과정(`reasoning_content`)을 깔끔한 Markdown 블록으로 표시합니다.
@@ -66,7 +68,7 @@ docker compose up -d
 ### 2. 실행 (사전 빌드된 이미지 사용)
 ```bash
 # 이미지 내려받기
-docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:v0.1.4
+docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:v0.1.5
 
 # 실행 (UI 접속 주소: http://localhost:7860)
 docker compose up -d

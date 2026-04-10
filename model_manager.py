@@ -26,12 +26,12 @@ class VLMModelManager:
         
         # Reasoning Configuration (Problem 2, 3 Mitigation)
         self.reasoning_config = {
-            "GPT-OSS": {"status": "forced_on", "label": "Always-on Reasoning (Model Design)"},
-            "LFM": {"status": "unsupported", "label": "Reasoning not supported for this model"},
-            "InternVL": {"status": "unsupported", "label": "Reasoning not supported for this model"},
-            "Qwen": {"status": "supported", "label": "Toggleable Reasoning"},
-            "Gemma": {"status": "supported", "label": "Toggleable Reasoning"},
-            "Next2": {"status": "supported", "label": "Toggleable Reasoning"}
+            "Qwen": {"status": "supported", "label": "Reasoning supported"},
+            "Gemma": {"status": "supported", "label": "Reasoning supported"},
+            "GPT-OSS": {"status": "supported", "label": "Reasoning supported"},
+            "LFM": {"status": "unsupported", "label": "Reasoning not supported"},
+            "InternVL": {"status": "unsupported", "label": "Reasoning not supported"},
+            "Next2": {"status": "unsupported", "label": "Reasoning not supported"}
         }
         
         print("--- Environment Check (DGX Spark / Arm / CUDA 13) ---")
@@ -334,6 +334,10 @@ class VLMModelManager:
         full_content = ""
         full_reasoning = ""
         
+        # Track the last seen timings to yield at the end
+        last_input_tps = 0
+        last_output_tps = 0
+        
         try:
             response = requests.post(url, json=payload, stream=True, timeout=300)
             if response.status_code != 200:
@@ -347,8 +351,14 @@ class VLMModelManager:
                         if decoded_line == "data: [DONE]": break
                         try:
                             chunk = json.loads(decoded_line[6:])
-                            delta = chunk["choices"][0]["delta"]
                             
+                            # Extract timings if present (usually in the end of the stream or every N tokens)
+                            timings = chunk.get("timings")
+                            if timings:
+                                last_input_tps = timings.get("prompt_per_second", 0)
+                                last_output_tps = timings.get("predicted_per_second", 0)
+
+                            delta = chunk["choices"][0].get("delta", {})
                             content_piece = delta.get("content", "")
                             reasoning_piece = delta.get("reasoning_content", "")
                             
@@ -363,10 +373,30 @@ class VLMModelManager:
                                 display_text = f"<details open><summary>Thinking...</summary>\n\n{full_reasoning}\n\n</details>\n\n"
                             display_text += full_content
                             
-                            yield {"status": "success", "text": display_text, "input_tps": 0, "output_tps": 0}
+                            yield {
+                                "status": "success", 
+                                "text": display_text, 
+                                "input_tps": last_input_tps, 
+                                "output_tps": last_output_tps
+                            }
+                                
                         except Exception as e:
                             print(f"--- [DEBUG] Error parsing stream chunk: {e} ---")
                             pass
+            
+            # Final yield with captured timings
+            display_text = ""
+            if full_reasoning:
+                display_text = f"<details><summary>Thought</summary>\n\n{full_reasoning}\n\n</details>\n\n"
+            display_text += full_content
+            
+            yield {
+                "status": "success", 
+                "text": display_text, 
+                "input_tps": last_input_tps, 
+                "output_tps": last_output_tps
+            }
+
         except Exception as e:
             print(f"--- [DEBUG] Stream query exception: {e} ---")
             yield {"status": "error", "message": str(e)}

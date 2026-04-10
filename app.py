@@ -41,14 +41,18 @@ def chat_interface(model_name, message, history, system_prompt, max_tokens, temp
     for resp in manager.stream_query(model_name, user_text, image_path, system_prompt, max_tokens, temperature, reasoning=reasoning):
         if resp["status"] == "success":
             history[-1]["content"] = resp["text"]
-            yield history, "Streaming...", "Streaming..."
+            in_tps_val = f"{resp['input_tps']:.2f}" if resp['input_tps'] > 0 else "Wait..."
+            out_tps_val = f"{resp['output_tps']:.2f}" if resp['output_tps'] > 0 else "Streaming..."
+            yield history, in_tps_val, out_tps_val
         else:
             history[-1]["content"] = f"Error: {resp['message']}"
             yield history, "Error", "Error"
             return
     
-    # Final update for TPS (since stream doesn't give precise TPS easily, we mark as Done)
-    yield history, "Done (Stream)", "Done (Stream)"
+    # Final state
+    final_in = f"{resp['input_tps']:.2f}" if resp['input_tps'] > 0 else "-"
+    final_out = f"{resp['output_tps']:.2f}" if resp['output_tps'] > 0 else "-"
+    yield history, final_in, final_out
 
 def run_benchmark(model_names, test_text, system_prompt, max_tokens, temperature, reasoning):
     if not test_text: return pd.DataFrame(), "테스트 텍스트를 입력하세요."
