@@ -17,11 +17,12 @@ def chat_interface(model_name, message, history, system_prompt, max_tokens, temp
     if user_text:
         user_content.append({"type": "text", "text": user_text})
     for f in user_files:
-        # Standard Gradio 6 image format
-        if any(f.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
-            user_content.append({"type": "image", "image": f})
+        # Standard Gradio 6 image format (dict with 'path')
+        f_path = f["path"] if isinstance(f, dict) else f
+        if any(f_path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+            user_content.append({"type": "image", "image": f_path})
         else:
-            user_content.append({"type": "file", "file": f})
+            user_content.append({"type": "file", "file": f_path})
     
     # If only text exists, prefer a simple string for compatibility
     if len(user_content) == 1 and user_content[0]["type"] == "text":
@@ -36,7 +37,7 @@ def chat_interface(model_name, message, history, system_prompt, max_tokens, temp
     yield history, "Waiting...", "Waiting..."
 
     # Query model with stream
-    image_path = user_files[0] if user_files else None
+    image_path = user_files[0]["path"] if (user_files and isinstance(user_files[0], dict)) else (user_files[0] if user_files else None)
     
     for resp in manager.stream_query(model_name, user_text, image_path, system_prompt, max_tokens, temperature, reasoning=reasoning):
         if resp["status"] == "success":

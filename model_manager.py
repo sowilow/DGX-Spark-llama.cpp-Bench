@@ -247,8 +247,10 @@ class VLMModelManager:
         messages = [{"role": "system", "content": system_prompt}]
         content = []
         if image_path:
+            # Handle potential dict from Gradio
+            img_p = image_path["path"] if isinstance(image_path, dict) else image_path
             import base64
-            with open(image_path, "rb") as f:
+            with open(img_p, "rb") as f:
                 img_str = base64.b64encode(f.read()).decode()
             content.append({
                 "type": "image_url",
@@ -317,8 +319,10 @@ class VLMModelManager:
         messages = [{"role": "system", "content": system_prompt}]
         content = []
         if image_path:
+            # Handle potential dict from Gradio
+            img_p = image_path["path"] if isinstance(image_path, dict) else image_path
             import base64
-            with open(image_path, "rb") as f:
+            with open(img_p, "rb") as f:
                 img_str = base64.b64encode(f.read()).decode()
             content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_str}"}})
         content.append({"type": "text", "text": prompt})

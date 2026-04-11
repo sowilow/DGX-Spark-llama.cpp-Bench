@@ -21,19 +21,19 @@ models:
   # --- Qwen Series (810x) ---
   Qwen-3.5-2B-Q4:
     port: 8101
-    repo_id: "sowilow/qwen-3-5-2b-it-DGX-Spark-GGUF"
+    repo_id: "sowilow/Qwen3.5-2B-DGX-Spark-GGUF"
     model_path: "models/qwen3.5-2b-q4_k_m.gguf"
     mmproj_path: "models/qwen3.5-2b-mmproj-f16.gguf"
   Qwen-3.5-2B-Q8:
     port: 8102
-    repo_id: "sowilow/qwen-3-5-2b-it-DGX-Spark-GGUF"
+    repo_id: "sowilow/Qwen3.5-2B-DGX-Spark-GGUF"
     model_path: "models/qwen3.5-2b-q8_0.gguf"
     mmproj_path: "models/qwen3.5-2b-mmproj-f16.gguf"
   Qwen-3.5-35B-Q4:
     port: 8103
-    repo_id: "sowilow/qwen-3-5-35b-it-DGX-Spark-GGUF"
+    repo_id: "sowilow/Qwen3.5-35B-A3B-DGX-Spark-GGUF"
     model_path: "models/qwen3.5-35b-a3b-q4_k_m.gguf"
-    mmproj_path: "models/qwen3.5-2b-mmproj-f16.gguf" # Shared mmproj
+    mmproj_path: "models/mmproj-qwen3.5-35b-v1-bf16.gguf"
 
   # --- Gemma Series (811x) ---
   Gemma-4-26B-Q4:
