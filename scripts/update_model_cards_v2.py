@@ -3,17 +3,17 @@ import os
 import sys
 from huggingface_hub import HfApi, hf_hub_download, upload_file
 
-PROMO_TAG = "## 🚀 v0.1.5: Real-time Metrics & Blackwell-Optimized Docker"
+PROMO_TAG = "## 🚀 v0.1.6: Real-time Metrics & Blackwell-Optimized Docker"
 PROMO_CONTENT = """
 
 ---
 
-## 🚀 v0.1.5: Real-time Metrics & Blackwell-Optimized Docker (Recommended)
+## 🚀 v0.1.6: Real-time Metrics & Blackwell-Optimized Docker (Recommended)
 
 This model is fully compatible with the **[DGX-Spark-llama.cpp-Bench](https://github.com/sowilow/DGX-Spark-llama.cpp-Bench)**.
 Experience the state-of-the-art inference engine optimized for NVIDIA Blackwell (DGX Spark) hardware.
 
-### 🌟 Key Features (v0.1.5)
+### 🌟 Key Features (v0.1.6)
 - **Real-time Performance Metrics**: Now visualizes `Input TPS` and `Output TPS` during streaming.
 - **Improved Reasoning UI**: Seamlessly renders and stabilizes the model's Chain-of-Thought (CoT).
 - **Blackwell Optimization**: Native support for ARM64/SM121 and CUDA 13.0 FP4.
@@ -21,18 +21,18 @@ Experience the state-of-the-art inference engine optimized for NVIDIA Blackwell 
 ### 🐳 Quick Start
 ```bash
 # Pull the latest optimized image
-docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:v0.1.5
+docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:v0.1.6
 ```
 For more details, visit our [GitHub Repository](https://github.com/sowilow/DGX-Spark-llama.cpp-Bench).
 
 ---
 
-## 🚀 v0.1.5: 실시간 지표 및 Blackwell 최적화 도커 (권장)
+## 🚀 v0.1.6: 실시간 지표 및 Blackwell 최적화 도커 (권장)
 
 이 모델은 **[DGX-Spark-llama.cpp-Bench](https://github.com/sowilow/DGX-Spark-llama.cpp-Bench)** 시스템에 최적화되어 있습니다.
 NVIDIA Blackwell (DGX Spark) 하드웨어의 성능을 최대로 활용하세요.
 
-### 🌟 주요 특징 (v0.1.5)
+### 🌟 주요 특징 (v0.1.6)
 - **실시간 성능 지표 시각화**: 스트리밍 중 `Input TPS` 및 `Output TPS`를 실시간으로 표시합니다.
 - **지능형 추론 UI 고도화**: 모델의 생각하는 과정(CoT)을 더 안정적으로 렌더링합니다.
 - **Blackwell 최적화**: ARM64/SM121 아키텍처 및 CUDA 13.0 FP4 가속 지원.
@@ -40,7 +40,7 @@ NVIDIA Blackwell (DGX Spark) 하드웨어의 성능을 최대로 활용하세요
 ### 🐳 실행 방법
 ```bash
 # 최신 최적화 이미지 내려받기
-docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:v0.1.5
+docker pull ghcr.io/sowilow/dgx-spark-llama.cpp-bench:v0.1.6
 ```
 상세한 사용법은 [GitHub 리포지토리](https://github.com/sowilow/DGX-Spark-llama.cpp-Bench)를 참조하세요.
 
