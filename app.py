@@ -130,7 +130,7 @@ footer {visibility: hidden}
 """
 
 with gr.Blocks(title="VLM Research Bench UI (Simple)") as demo:
-    gr.Markdown("# 🚀 VLM Research Bench UI (Blackwell Optimized)")
+    gr.Markdown("# 🚀 VLM Research Bench UI (Blackwell Optimized) v0.1.6")
     gr.Markdown("GPU: NVIDIA Blackwell GB10 | Arch: ARM64 | Environment: CUDA 13.0")
     
     # Pre-calculate initial reasoning state to avoid demo.load loop
