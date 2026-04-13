@@ -20,9 +20,9 @@ def chat_interface(model_name, message, history, system_prompt, max_tokens, temp
         # Standard Gradio 6 image format (dict with 'path')
         f_path = f["path"] if isinstance(f, dict) else f
         if any(f_path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
-            user_content.append({"type": "image", "image": f_path})
+            user_content.append({"type": "image", "file": {"path": f_path}})
         else:
-            user_content.append({"type": "file", "file": f_path})
+            user_content.append({"type": "file", "file": {"path": f_path}})
     
     # If only text exists, prefer a simple string for compatibility
     if len(user_content) == 1 and user_content[0]["type"] == "text":
