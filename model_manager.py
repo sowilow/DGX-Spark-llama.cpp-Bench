@@ -22,7 +22,7 @@ class VLMModelManager:
         self.hw_config = self.config['hardware']
         self.processes = {} # {model_name: process}
         self.running_reasoning = {} # {model_name: "on" or "off"}
-        self.server_bin = "/usr/local/bin/llama-server"
+        self.server_bin = os.path.join(self.base_dir, "llama.cpp", "build", "bin", "llama-server")
         
         # Reasoning Configuration (Problem 2, 3 Mitigation)
         self.reasoning_config = {
@@ -157,7 +157,7 @@ class VLMModelManager:
         # Build command
         cmd = [
             self.server_bin,
-            "--host", "0.0.0.0",
+            "--host", "::",
             "-m", model_path,
             "--port", str(port),
             "-ngl", str(self.hw_config['gpu_layers']),
@@ -171,9 +171,23 @@ class VLMModelManager:
         if mmproj_rel_path:
             mmproj_path = self._resolve_path(mmproj_rel_path)
             cmd.extend(["--mmproj", mmproj_path])
+            
+        # Add MTP Config if specified
+        mtp_config = cfg.get('mtp_config')
+        if mtp_config:
+            if mtp_config.get('type') == 'draft_model' and mtp_config.get('draft_model_path'):
+                draft_path = self._resolve_path(mtp_config['draft_model_path'])
+                cmd.extend(["-md", draft_path])
+                if 'draft_tokens' in mtp_config:
+                    cmd.extend(["--draft", str(mtp_config['draft_tokens'])])
+            elif mtp_config.get('type') == 'ngram':
+                cmd.extend(["--spec-type", "ngram-simple"])
+                if 'draft_tokens' in mtp_config:
+                    cmd.extend(["--draft", str(mtp_config['draft_tokens'])])
+
         
         print(f"--- [DEBUG] Starting server for {model_name} on port {port} (Reasoning: {reasoning}) ---")
-        log_path = os.path.join(self.base_dir, f"server_{model_name}.log")
+        log_path = os.path.join(self.base_dir, "scratch", f"server_{model_name}.log")
         log_file = open(log_path, "w", buffering=1)
         
         proc = subprocess.Popen(cmd, stdout=log_file, stderr=log_file, preexec_fn=os.setsid)

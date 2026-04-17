@@ -34,6 +34,17 @@ models:
     repo_id: "sowilow/Qwen3.5-35B-A3B-DGX-Spark-GGUF"
     model_path: "models/qwen3.5-35b-a3b-q4_k_m.gguf"
     mmproj_path: "models/mmproj-qwen3.5-35b-v1-bf16.gguf"
+    mtp_config:
+      type: "ngram"
+      draft_tokens: 2
+  Qwen-3.5-35B-MTP-Native:
+    port: 38110
+    model_path: "models/qwen3.5-35b-a3b-q4_k_m.gguf" # Original clean Q4 model
+    mmproj_path: "models/mmproj-qwen3.5-35b-v1-bf16.gguf"
+    mtp_config:
+      type: "draft_model"
+      draft_model_path: "models/qwen3.5-35b-mtp-draft.gguf" # Separated MTP Draft
+      draft_tokens: 2
 
   # --- Gemma Series (811x) ---
   Gemma-4-26B-Q4:
